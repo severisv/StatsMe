@@ -59,10 +59,10 @@ let getTeamScore prevGames =
 let mutable uavgjort = 0
 
 let predict game allGames variable = 
-        let homeScore = 0.45 * (getPreviousGames game.Date game.HomeTeam allGames variable |> getTeamScore)
-        let awayScore = 0.3 * (getPreviousGames game.Date game.AwayTeam allGames variable |> getTeamScore)
+        let homeScore = 0.45 * (getPreviousGames game.Date game.HomeTeam allGames 14 |> getTeamScore)
+        let awayScore = 0.3 * (getPreviousGames game.Date game.AwayTeam allGames 14 |> getTeamScore)
               
-        if Math.Abs(Math.Abs(homeScore) - Math.Abs(awayScore)) < 8.0 then
+        if Math.Abs(Math.Abs(homeScore) - Math.Abs(awayScore)) < 10.0 then
             uavgjort <- 1 + uavgjort
             U       
         elif homeScore > awayScore then 
@@ -94,12 +94,12 @@ let main argv =
       
     let sample = 600
    
-    for i = 10 to 35 do
-        let correctPredictions = allGames |> Seq.take sample |> Seq.filter(fun game -> predictionHolds game allGames i) |> Seq.length  
-        printf "%i: %f \n" i (float(correctPredictions)/float(sample)*100.0)
+//  for i = 10 to 35 do
+    let correctPredictions = allGames |> Seq.take sample |> Seq.filter(fun game -> predictionHolds game allGames "variable") |> Seq.length  
+    printf "%i: %f \n" 1 (float(correctPredictions)/float(sample)*100.0)
 
     
    
-//    printf "%f \n" (float(uavgjort)/float(sample))
+    printf "%f \n" (float(uavgjort)/float(sample))
     let s = Console.ReadLine()
     0 // return an integer exit code
