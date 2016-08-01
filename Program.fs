@@ -92,14 +92,16 @@ let games16 = GamesFile16.GetSample().Rows |> Seq.map ( fun c -> { Division = c.
 let main argv =
     let allGames = Seq.append games15 games16 |> Seq.append games14  |> Seq.append games13  |> Seq.sortByDescending(fun game -> game.Date)
       
-    let sample = 600
+    let sample = 150
    
-//  for i = 10 to 35 do
-    let correctPredictions = allGames |> Seq.take sample |> Seq.filter(fun game -> predictionHolds game allGames "variable") |> Seq.length  
-    printf "%i: %f \n" 1 (float(correctPredictions)/float(sample)*100.0)
+    for i = 1 to 1 do
+        let correctPredictions = allGames |> Seq.take (sample) |> Seq.filter(fun game -> predictionHolds game allGames "variable") |> Seq.length  
+        printf "%i: %f \n" 1 (float(correctPredictions)/float(sample)*100.0)
+        printf "%f \n" (float(uavgjort)/float(sample))
+        uavgjort <- 1 + uavgjort
+
 
     
    
-    printf "%f \n" (float(uavgjort)/float(sample))
     let s = Console.ReadLine()
     0 // return an integer exit code
