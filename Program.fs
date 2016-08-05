@@ -10,10 +10,12 @@ type Team = {
     Fouls : int
 }
 
+type Outcome =  Win | Draw | Loss
 
 type PlayedGame = {
     Shots : int
     ShotsOnTarget : int
+    Outcome : Outcome
 }
 
 
@@ -27,55 +29,84 @@ type Game = {
 type Result =  H | U | B
 
 
+type Prediction = {
+    Home : double
+    Draw : double
+    Away : double
+}
+
+type Odds = {
+    H : double
+    U : double
+    B : double
+}
+
 let getResult game = 
     if game.HomeTeam.Score > game.AwayTeam.Score then H
     elif game.HomeTeam.Score < game.AwayTeam.Score then B
     else U
 
+let getOutcome goalsFor goalsAgainst =
+    if goalsFor > goalsAgainst then Win
+    elif goalsFor < goalsAgainst then Loss
+    else Draw
 
-let getPreviousGames date team games take =
+let getPreviousHomeGames date team games take =
         let home = games |> Seq.filter(fun game -> game.HomeTeam.Name = team.Name && game.Date < date)
         let homegames = if home |> Seq.length > take then home |> Seq.take take else home
-        let homeMapped = homegames |> Seq.map(fun game -> { Shots = game.HomeTeam.Shots - game.AwayTeam.Shots; ShotsOnTarget = game.HomeTeam.ShotsOnTarget - game.AwayTeam.ShotsOnTarget })
-        
+        homegames |> Seq.map(fun game -> 
+          { Shots = game.HomeTeam.Shots - game.AwayTeam.Shots; 
+            ShotsOnTarget = game.HomeTeam.ShotsOnTarget - game.AwayTeam.ShotsOnTarget;
+            Outcome = (getOutcome game.HomeTeam.Score game.AwayTeam.Score) })
+ 
+let getPreviousAwayGames date team games take =       
         let away = games |> Seq.filter(fun game -> game.AwayTeam.Name = team.Name && game.Date < date)
         let awaygames = if away |> Seq.length > take then away |> Seq.take take else away
-        let awayMapped = awaygames |> Seq.map(fun game -> { Shots = game.AwayTeam.Shots - game.HomeTeam.Shots; ShotsOnTarget = game.AwayTeam.ShotsOnTarget - game.HomeTeam.ShotsOnTarget })
-        
-        homeMapped |> Seq.append awayMapped
+        awaygames |> Seq.map(fun game -> 
+          { Shots = game.AwayTeam.Shots - game.HomeTeam.Shots; 
+            ShotsOnTarget = game.AwayTeam.ShotsOnTarget - game.HomeTeam.ShotsOnTarget; 
+            Outcome = (getOutcome game.AwayTeam.Score game.HomeTeam.Score) })        
 
 
-let getTeamScore prevGames = 
-        let count = prevGames |> Seq.length
-        let shots = prevGames |> Seq.sumBy(fun prev -> prev.Shots)
-        let shotsOnTarget = prevGames |> Seq.sumBy(fun prev -> prev.ShotsOnTarget)
-        let result = float(shotsOnTarget) + (float(shots) * 0.25) + 100.0
-        if count < 1 then 
-            90.0
-        elif count < 5 then 
-            result * 0.5
-        else result
+let getOutcomePercentage outcomes outcome totalGames = 
+        float(outcomes |> Seq.filter (fun game -> game.Outcome = outcome) |> Seq.length ) / totalGames
 
-let mutable uavgjort = 0
+let getTeamScore (prevGames:seq<PlayedGame>) = 
+       let totalGames = prevGames |> Seq.length |> float
+       let outcomes = prevGames |> Seq.map(fun game -> game)
+       let winPercentage = getOutcomePercentage outcomes Win totalGames
+       let drawPercentage = getOutcomePercentage outcomes Draw totalGames
+       let lossPercentage = getOutcomePercentage outcomes Loss totalGames
+       { Home = winPercentage; Draw = drawPercentage; Away = lossPercentage }
 
-let predict game allGames variable = 
-        let homeScore = 0.45 * (getPreviousGames game.Date game.HomeTeam allGames 14 |> getTeamScore)
-        let awayScore = 0.3 * (getPreviousGames game.Date game.AwayTeam allGames 14 |> getTeamScore)
-              
-        if Math.Abs(Math.Abs(homeScore) - Math.Abs(awayScore)) < 10.0 then
-            uavgjort <- 1 + uavgjort
-            U       
-        elif homeScore > awayScore then 
-            H    
-        else 
-            B
+
+let createOdds prediction =
+        { H = 1.0/prediction.Home; U = 1.0/prediction.Draw; B = 1.0/prediction.Away }
+    
+
+let bet game allGames variable = 
+        let homeScore = getTeamScore (getPreviousHomeGames game.Date game.HomeTeam allGames 14)
+        let awayScore = getTeamScore (getPreviousAwayGames game.Date game.AwayTeam allGames 14)
+       
+        let prediction = { Home = (homeScore.Home + awayScore.Home)/2.0;  Draw = (homeScore.Draw + awayScore.Draw)/2.0; Away = (homeScore.Away + awayScore.Away)/2.0 }   
+        let odds = createOdds prediction
+
+        printfn "%f %f %f \n" odds.H odds.U odds.B
+
+
+        if prediction.Home > prediction.Draw && prediction.Home > prediction.Away then H
+        elif prediction.Draw > prediction.Home && prediction.Draw > prediction.Away then U
+        else B
+ 
 
 let predictionHolds game allGames variable = 
-        let prediction = predict game allGames variable
+        let prediction = bet game allGames variable
         let result = getResult game
         result = prediction
 
 
+let count result predictions =
+    float(predictions |> Seq.filter(fun res -> res = result) |> Seq.length) / float(predictions |> Seq.length)
 
 type GamesFile13 = CsvProvider<"./data/13.csv">
 type GamesFile14 = CsvProvider<"./data/14.csv">
@@ -92,15 +123,14 @@ let games16 = GamesFile16.GetSample().Rows |> Seq.map ( fun c -> { Division = c.
 let main argv =
     let allGames = Seq.append games15 games16 |> Seq.append games14  |> Seq.append games13  |> Seq.sortByDescending(fun game -> game.Date)
       
-    let sample = 150
+    let sample = 10
    
     for i = 1 to 1 do
-        let correctPredictions = allGames |> Seq.take (sample) |> Seq.filter(fun game -> predictionHolds game allGames "variable") |> Seq.length  
-        printf "%i: %f \n" 1 (float(correctPredictions)/float(sample)*100.0)
-        printf "%f \n" (float(uavgjort)/float(sample))
-        uavgjort <- 1 + uavgjort
-
-
+        let predictions = allGames |> Seq.take (sample) |> Seq.map(fun game -> bet game allGames "variable")
+        let totalHome = predictions |> count H 
+        let totalDraw = predictions |> count U 
+        let totalAway = predictions |> count B 
+        printf "%f %f %f \n" totalHome totalDraw totalAway
     
    
     let s = Console.ReadLine()
