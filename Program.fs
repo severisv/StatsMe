@@ -24,6 +24,9 @@ type Game = {
     Division : string
     HomeTeam : Team
     AwayTeam : Team
+    H : decimal
+    U : decimal
+    B : decimal
   }
 
 type Result =  H | U | B
@@ -39,6 +42,11 @@ type Odds = {
     H : double
     U : double
     B : double
+}
+
+type Prize = {
+    Balance : float
+    Spent: float
 }
 
 let getResult game = 
@@ -80,57 +88,85 @@ let getTeamScore (prevGames:seq<PlayedGame>) =
        { Home = winPercentage; Draw = drawPercentage; Away = lossPercentage }
 
 
-let createOdds prediction =
-        { H = 1.0/prediction.Home; U = 1.0/prediction.Draw; B = 1.0/prediction.Away }
+let createOdds prediction treshold =
+        { H = treshold/prediction.Home; U = treshold/prediction.Draw; B = treshold/prediction.Away }
     
+let betOnGame amount (prediction:float) (provided:float) (didWin:bool) =
+        if provided > prediction then 
+            if didWin then (provided * amount), amount
+            else -amount, amount
+        else 0.0, 0.0
 
 let bet game allGames variable = 
         let homeScore = getTeamScore (getPreviousHomeGames game.Date game.HomeTeam allGames 14)
         let awayScore = getTeamScore (getPreviousAwayGames game.Date game.AwayTeam allGames 14)
        
         let prediction = { Home = (homeScore.Home + awayScore.Home)/2.0;  Draw = (homeScore.Draw + awayScore.Draw)/2.0; Away = (homeScore.Away + awayScore.Away)/2.0 }   
-        let odds = createOdds prediction
-
-        printfn "%f %f %f \n" odds.H odds.U odds.B
-
-
-        if prediction.Home > prediction.Draw && prediction.Home > prediction.Away then H
-        elif prediction.Draw > prediction.Home && prediction.Draw > prediction.Away then U
-        else B
- 
-
-let predictionHolds game allGames variable = 
-        let prediction = bet game allGames variable
+        let odds = createOdds prediction variable
+        
         let result = getResult game
-        result = prediction
+        
+        let amount = 100.0
+
+        let homebalance, homeSpent = betOnGame amount odds.H (float game.H) (result = H)
+        let drawbalance, drawSpent = betOnGame amount odds.U (float game.U) (result = U)
+        let awaybalance, awaySpent = betOnGame amount odds.B (float game.B) (result = B)
+        
 
 
+        let result = { Balance = homebalance + drawbalance + awaybalance; Spent =  homeSpent + drawSpent + awaySpent }
+        printf "%s - %s   ->  %f \n" game.HomeTeam.Name game.AwayTeam.Name result.Balance
+        result
+
+        
+ 
+ 
 let count result predictions =
     float(predictions |> Seq.filter(fun res -> res = result) |> Seq.length) / float(predictions |> Seq.length)
 
-type GamesFile13 = CsvProvider<"./data/13.csv">
-type GamesFile14 = CsvProvider<"./data/14.csv">
 type GamesFile15 = CsvProvider<"./data/15.csv">
 type GamesFile16 = CsvProvider<"./data/16.csv">
+type GamesFile17 = CsvProvider<"./data/17.csv">
 
-let games13 = GamesFile13.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF }} ) 
-let games14 = GamesFile14.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF }} ) 
-let games15 = GamesFile15.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF }} ) 
-let games16 = GamesFile16.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF }} ) 
+let games15 = GamesFile15.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
+        HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
+        AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF };
+        H = c.B365H;
+        U = c.B365D;
+        B = c.B365A }
+         ) 
+
+let games16 = GamesFile16.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
+        HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
+        AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF };
+        H = c.B365H;
+        U = c.B365D;
+        B = c.B365A }
+         ) 
+
+let games17 = GamesFile17.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
+        HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
+        AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF };
+        H = c.B365H;
+        U = c.B365D;
+        B = c.B365A }
+         ) 
+
  
         
 [<EntryPoint>]
 let main argv =
-    let allGames = Seq.append games15 games16 |> Seq.append games14  |> Seq.append games13  |> Seq.sortByDescending(fun game -> game.Date)
+    let allGames = Seq.append games15 games16 |> Seq.append games17 |> Seq.sortByDescending(fun game -> game.Date)
       
-    let sample = 10
+    let sample = 100
    
-    for i = 1 to 1 do
-        let predictions = allGames |> Seq.take (sample) |> Seq.map(fun game -> bet game allGames "variable")
-        let totalHome = predictions |> count H 
-        let totalDraw = predictions |> count U 
-        let totalAway = predictions |> count B 
-        printf "%f %f %f \n" totalHome totalDraw totalAway
+    for i = 7 to 10 do
+        let variable = (float i)/10.0
+        let predictions = allGames |> Seq.take (sample) |> Seq.map(fun game -> bet game allGames variable)
+
+        let balance = predictions |> Seq.sumBy (fun res -> res.Balance)
+        let spent = predictions |> Seq.sumBy (fun res -> res.Spent)
+        printf "%f:  %f - %f   ->  %f \n" variable balance spent ((balance + spent)/ spent)
     
    
     let s = Console.ReadLine()
