@@ -126,7 +126,7 @@ let count result predictions =
 
 type GamesFile15 = CsvProvider<"./data/15.csv">
 type GamesFile16 = CsvProvider<"./data/16.csv">
-type GamesFile17 = CsvProvider<"./data/17.csv">
+type GamesFile17 = CsvProvider<"http://www.football-data.co.uk/mmz4281/1617/E0.csv">
 
 let games15 = GamesFile15.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
         HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
@@ -158,9 +158,9 @@ let games17 = GamesFile17.GetSample().Rows |> Seq.map ( fun c -> { Division = c.
 let main argv =
     let allGames = Seq.append games15 games16 |> Seq.append games17 |> Seq.sortByDescending(fun game -> game.Date)
       
-    let sample = 100
+    let sample = 30
    
-    for i = 7 to 10 do
+    for i = 9 to 9 do
         let variable = (float i)/10.0
         let predictions = allGames |> Seq.take (sample) |> Seq.map(fun game -> bet game allGames variable)
 
