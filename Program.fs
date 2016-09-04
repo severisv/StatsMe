@@ -1,63 +1,7 @@
 ﻿open System
 open FSharp.Data
-
-type Team = {
-    Name : string
-    Score : int
-    Shots : int
-    ShotsOnTarget : int
-    Corners : int
-    Fouls : int
-}
-
-type Outcome =  Win | Draw | Loss
-
-type PlayedGame = {
-    Shots : int
-    ShotsOnTarget : int
-    Outcome : Outcome
-}
-
-
-type Game = {
-    Date : DateTime
-    Division : string
-    HomeTeam : Team
-    AwayTeam : Team
-    H : decimal
-    U : decimal
-    B : decimal
-  }
-
-type Result =  H | U | B
-
-
-type Prediction = {
-    Home : double
-    Draw : double
-    Away : double
-}
-
-type Odds = {
-    H : double
-    U : double
-    B : double
-}
-
-type Prize = {
-    Balance : float
-    Spent: float
-}
-
-let getResult game = 
-    if game.HomeTeam.Score > game.AwayTeam.Score then H
-    elif game.HomeTeam.Score < game.AwayTeam.Score then B
-    else U
-
-let getOutcome goalsFor goalsAgainst =
-    if goalsFor > goalsAgainst then Win
-    elif goalsFor < goalsAgainst then Loss
-    else Draw
+open Odds
+open Game
 
 let getPreviousHomeGames date team games take =
         let home = games |> Seq.filter(fun game -> game.HomeTeam.Name = team.Name && game.Date < date)
@@ -65,7 +9,7 @@ let getPreviousHomeGames date team games take =
         homegames |> Seq.map(fun game -> 
           { Shots = game.HomeTeam.Shots - game.AwayTeam.Shots; 
             ShotsOnTarget = game.HomeTeam.ShotsOnTarget - game.AwayTeam.ShotsOnTarget;
-            Outcome = (getOutcome game.HomeTeam.Score game.AwayTeam.Score) })
+            Result = (Game.getResult game.HomeTeam.Score game.AwayTeam.Score) })
  
 let getPreviousAwayGames date team games take =       
         let away = games |> Seq.filter(fun game -> game.AwayTeam.Name = team.Name && game.Date < date)
@@ -73,11 +17,11 @@ let getPreviousAwayGames date team games take =
         awaygames |> Seq.map(fun game -> 
           { Shots = game.AwayTeam.Shots - game.HomeTeam.Shots; 
             ShotsOnTarget = game.AwayTeam.ShotsOnTarget - game.HomeTeam.ShotsOnTarget; 
-            Outcome = (getOutcome game.AwayTeam.Score game.HomeTeam.Score) })        
+            Result = (Game.getResult game.AwayTeam.Score game.HomeTeam.Score) })        
 
 
-let getOutcomePercentage outcomes outcome totalGames = 
-        float(outcomes |> Seq.filter (fun game -> game.Outcome = outcome) |> Seq.length ) / totalGames
+let getOutcomePercentage results result totalGames = 
+        float(results |> Seq.filter (fun game -> game.Result = result) |> Seq.length ) / totalGames
 
 let getTeamScore (prevGames:seq<PlayedGame>) = 
        let totalGames = prevGames |> Seq.length |> float
@@ -104,13 +48,13 @@ let bet game allGames variable =
         let prediction = { Home = (homeScore.Home + awayScore.Home)/2.0;  Draw = (homeScore.Draw + awayScore.Draw)/2.0; Away = (homeScore.Away + awayScore.Away)/2.0 }   
         let odds = createOdds prediction variable
         
-        let result = getResult game
+        let outcome = Game.getOutcome game
         
         let amount = 100.0
 
-        let homebalance, homeSpent = betOnGame amount odds.H (float game.H) (result = H)
-        let drawbalance, drawSpent = betOnGame amount odds.U (float game.U) (result = U)
-        let awaybalance, awaySpent = betOnGame amount odds.B (float game.B) (result = B)
+        let homebalance, homeSpent = betOnGame amount odds.H game.Odds.H (outcome = H)
+        let drawbalance, drawSpent = betOnGame amount odds.U game.Odds.U (outcome = U)
+        let awaybalance, awaySpent = betOnGame amount odds.B game.Odds.B (outcome = B)
         
 
 
@@ -131,26 +75,19 @@ type GamesFile17 = CsvProvider<"http://www.football-data.co.uk/mmz4281/1617/E0.c
 let games15 = GamesFile15.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
         HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
         AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF };
-        H = c.B365H;
-        U = c.B365D;
-        B = c.B365A }
-         ) 
+               Odds = {  H = float c.B365H; U = float c.B365D;  B = float c.B365A } } ) 
+
 
 let games16 = GamesFile16.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
         HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
         AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF };
-        H = c.B365H;
-        U = c.B365D;
-        B = c.B365A }
-         ) 
+               Odds = {  H = float c.B365H; U = float c.B365D;  B = float c.B365A } } ) 
+
 
 let games17 = GamesFile17.GetSample().Rows |> Seq.map ( fun c -> { Division = c.Div; Date = DateTime.Parse c.Date; 
         HomeTeam = { Name = c.HomeTeam; Score = c.FTHG; Shots = c.HS; ShotsOnTarget = c.HST; Corners = c.HC; Fouls = c.HF }; 
         AwayTeam = { Name = c.AwayTeam; Score = c.FTAG; Shots = c.AS; ShotsOnTarget = c.AST; Corners = c.AC; Fouls = c.AF };
-        H = c.B365H;
-        U = c.B365D;
-        B = c.B365A }
-         ) 
+        Odds = {  H = float c.B365H; U = float c.B365D;  B = float c.B365A } } ) 
 
  
         
