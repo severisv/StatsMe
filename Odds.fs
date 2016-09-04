@@ -20,5 +20,3 @@ type Prediction = {
 }
 
 
-let createOdds prediction treshold =
-        { H = treshold/prediction.Home; U = treshold/prediction.Draw; B = treshold/prediction.Away }
