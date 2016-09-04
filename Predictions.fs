@@ -2,7 +2,7 @@
 
 open Game
 open Odds
-open Parameters
+open Models
 
 let getOutcomeDistribution results result totalGames = 
         float(results |> Seq.filter (fun game -> game.Result = result) |> Seq.length ) / totalGames

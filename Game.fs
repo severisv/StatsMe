@@ -2,6 +2,7 @@
 
 open System
 open Odds
+open Models
 
 type Team = {
     Name : string
