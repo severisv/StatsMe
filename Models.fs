@@ -1,4 +1,5 @@
 ﻿module Models
+open Util
 
 type Parameters = { OddsThreshold : float }
     with
@@ -6,7 +7,12 @@ type Parameters = { OddsThreshold : float }
             printf "--------------------------------------------------\n{ OddsThreshold: %f } \n" this.OddsThreshold
 
 
-type Seasons = S14 | S15 | S16 | S17
+type League = PL | BL | FR | SP
+    with member this.name = GetUnionCaseName this
+                        
 
-type Leagues = PL | BL | FR | SP
+type Season = {
+    Year : int
+    League : League
+}
 
