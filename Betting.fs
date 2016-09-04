@@ -4,6 +4,7 @@ open Game
 open Games
 open Odds
 open Predictions
+open Models
 
 let betOnGame amount (prediction:float) (provided:float) (didWin:bool) =
         if provided > prediction then 
@@ -12,9 +13,9 @@ let betOnGame amount (prediction:float) (provided:float) (didWin:bool) =
         else 0.0, 0.0
 
 let bet game allGames parameters = 
-        let homePrediction = getTeamPrediction (getPreviousHomeGames game.Date game.HomeTeam allGames 14) Home
-        let awayPrediction = getTeamPrediction (getPreviousAwayGames game.Date game.AwayTeam allGames 14) Away
-       
+        let homePrediction = getTeamPrediction game allGames parameters Home
+        let awayPrediction = getTeamPrediction game allGames parameters Away
+
         let prediction = createPrediction homePrediction awayPrediction parameters
         
         let outcome = getOutcome game

@@ -31,4 +31,7 @@ type EndResult = {
     member this.print = 
             printf "--------------------------------------------------\n"
             this.Parameters.print
-            printf "{ Score: %f }\n" this.score
+            printf "{ Score: %f  Total spent: %f }\n" this.score this.TotalSpent
+    
+    override this.ToString() = 
+        sprintf "%f,%s" this.score (this.Parameters.ToString())

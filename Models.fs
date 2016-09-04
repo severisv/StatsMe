@@ -5,15 +5,31 @@ open Util
 type League = PL | BL | FR | SP
     with member this.name = GetUnionCaseName this
 
-type Parameters = { OddsThreshold : float; League: League }
+let mapLeague str =
+    match str with
+        | "PL" -> PL
+        | "BL" -> BL
+        | "FR"-> FR
+        | "SP" -> SP
+
+type Parameters = { 
+        OddsThreshold : float; 
+        PreviousGameCount: int;
+        AwayToHomeRatio: float;
+        League: League;
+        Score: float
+        }
     with
     member this.print = 
             printf "--------------------------------------------------\n{ League: %s   OddsThreshold: %f } \n" this.League.name this.OddsThreshold
-                                    
+    override this.ToString() = 
+        sprintf "%f,%i,%f,%s\n" this.OddsThreshold this.PreviousGameCount this.AwayToHomeRatio this.League.name                               
 
 type Season = {
     Year : int
     League : League
 }
 
-let getLeagues = [ PL; BL; FR; SP ]
+let getLeagues = [  BL; PL; FR; SP ]
+
+

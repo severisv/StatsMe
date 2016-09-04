@@ -65,6 +65,7 @@
     <Compile Include="Predictions.fs" />
     <Compile Include="Betting.fs" />
     <Compile Include="GameRepository.fs" />
+    <Compile Include="ParameterRepository.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

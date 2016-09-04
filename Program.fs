@@ -19,16 +19,28 @@ let main argv =
 
         let allGames = GameRepository.get league
       
-        let sample = 500
-     
-        for i = 5 to 10 do
-            let parameters = { League = league; OddsThreshold = (float i)/5.0 }
-            let predictions = allGames |> Seq.take (sample) |> Seq.map(fun game -> bet game allGames parameters)
-
-            let balance = predictions |> Seq.sumBy (fun res -> res.Balance)
-            let spent = predictions |> Seq.sumBy (fun res -> res.Spent)
+        let sample = 720
         
-            { Balance = balance; TotalSpent = spent; Parameters = parameters }.print
+        for j = 0 to 10 do
+            for i = 7 to 9 do
+                let parameters = { 
+                    League = league; 
+                    OddsThreshold = (float i)/4.0;
+                    AwayToHomeRatio = float(j)/10.0;
+                    PreviousGameCount = 14;
+                    Score = 0.0
+                    }
+                let predictions = allGames |> Seq.take (sample) |> Seq.map(fun game -> bet game allGames parameters)
+
+                let balance = predictions |> Seq.sumBy (fun res -> res.Balance)
+                let spent = predictions |> Seq.sumBy (fun res -> res.Spent)
+        
+                let result = { Balance = balance; TotalSpent = spent; Parameters = parameters }
+                result.print
+             
+                ParameterRepository.add result                  
+          
+
     
    
     let s = Console.ReadLine()
