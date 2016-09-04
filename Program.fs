@@ -2,69 +2,11 @@
 open FSharp.Data
 open Odds
 open Game
-
-let getPreviousHomeGames date team games take =
-        let home = games |> Seq.filter(fun game -> game.HomeTeam.Name = team.Name && game.Date < date)
-        let homegames = if home |> Seq.length > take then home |> Seq.take take else home
-        homegames |> Seq.map(fun game -> 
-          { Shots = game.HomeTeam.Shots - game.AwayTeam.Shots; 
-            ShotsOnTarget = game.HomeTeam.ShotsOnTarget - game.AwayTeam.ShotsOnTarget;
-            Result = (Game.getResult game.HomeTeam.Score game.AwayTeam.Score) })
+open Games
+open Predictions
+open Betting
  
-let getPreviousAwayGames date team games take =       
-        let away = games |> Seq.filter(fun game -> game.AwayTeam.Name = team.Name && game.Date < date)
-        let awaygames = if away |> Seq.length > take then away |> Seq.take take else away
-        awaygames |> Seq.map(fun game -> 
-          { Shots = game.AwayTeam.Shots - game.HomeTeam.Shots; 
-            ShotsOnTarget = game.AwayTeam.ShotsOnTarget - game.HomeTeam.ShotsOnTarget; 
-            Result = (Game.getResult game.AwayTeam.Score game.HomeTeam.Score) })        
 
-
-let getOutcomePercentage results result totalGames = 
-        float(results |> Seq.filter (fun game -> game.Result = result) |> Seq.length ) / totalGames
-
-let getTeamScore (prevGames:seq<PlayedGame>) = 
-       let totalGames = prevGames |> Seq.length |> float
-       let outcomes = prevGames |> Seq.map(fun game -> game)
-       let winPercentage = getOutcomePercentage outcomes Win totalGames
-       let drawPercentage = getOutcomePercentage outcomes Draw totalGames
-       let lossPercentage = getOutcomePercentage outcomes Loss totalGames
-       { Home = winPercentage; Draw = drawPercentage; Away = lossPercentage }
-
-
-let createOdds prediction treshold =
-        { H = treshold/prediction.Home; U = treshold/prediction.Draw; B = treshold/prediction.Away }
-    
-let betOnGame amount (prediction:float) (provided:float) (didWin:bool) =
-        if provided > prediction then 
-            if didWin then (provided * amount), amount
-            else -amount, amount
-        else 0.0, 0.0
-
-let bet game allGames variable = 
-        let homeScore = getTeamScore (getPreviousHomeGames game.Date game.HomeTeam allGames 14)
-        let awayScore = getTeamScore (getPreviousAwayGames game.Date game.AwayTeam allGames 14)
-       
-        let prediction = { Home = (homeScore.Home + awayScore.Home)/2.0;  Draw = (homeScore.Draw + awayScore.Draw)/2.0; Away = (homeScore.Away + awayScore.Away)/2.0 }   
-        let odds = createOdds prediction variable
-        
-        let outcome = Game.getOutcome game
-        
-        let amount = 100.0
-
-        let homebalance, homeSpent = betOnGame amount odds.H game.Odds.H (outcome = H)
-        let drawbalance, drawSpent = betOnGame amount odds.U game.Odds.U (outcome = U)
-        let awaybalance, awaySpent = betOnGame amount odds.B game.Odds.B (outcome = B)
-        
-
-
-        let result = { Balance = homebalance + drawbalance + awaybalance; Spent =  homeSpent + drawSpent + awaySpent }
-        printf "%s - %s   ->  %f \n" game.HomeTeam.Name game.AwayTeam.Name result.Balance
-        result
-
-        
- 
- 
 let count result predictions =
     float(predictions |> Seq.filter(fun res -> res = result) |> Seq.length) / float(predictions |> Seq.length)
 
@@ -95,7 +37,7 @@ let games17 = GamesFile17.GetSample().Rows |> Seq.map ( fun c -> { Division = c.
 let main argv =
     let allGames = Seq.append games15 games16 |> Seq.append games17 |> Seq.sortByDescending(fun game -> game.Date)
       
-    let sample = 30
+    let sample = 500
    
     for i = 9 to 9 do
         let variable = (float i)/10.0

@@ -35,6 +35,8 @@ type Game = {
 
 type Outcome =  H | U | B
 
+type Venue = Home | Away
+
 let getOutcome game = 
     if game.HomeTeam.Score > game.AwayTeam.Score then H
     elif game.HomeTeam.Score < game.AwayTeam.Score then B

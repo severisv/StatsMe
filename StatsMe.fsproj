@@ -59,6 +59,9 @@
     <Content Include="packages.config" />
     <Compile Include="Odds.fs" />
     <Compile Include="Game.fs" />
+    <Compile Include="Games.fs" />
+    <Compile Include="Predictions.fs" />
+    <Compile Include="Betting.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
