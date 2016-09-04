@@ -21,7 +21,8 @@ type Parameters = {
         }
     with
     member this.print = 
-            printf "--------------------------------------------------\n{ League: %s   OddsThreshold: %f } \n" this.League.name this.OddsThreshold
+            printf "--------------------------------------------------\n{ League: %s   OddsThreshold: %f  AwayToHomeRatio: %f  Previous games: %i } \n" 
+                this.League.name this.OddsThreshold this.AwayToHomeRatio this.PreviousGameCount
     override this.ToString() = 
         sprintf "%f,%i,%f,%s\n" this.OddsThreshold this.PreviousGameCount this.AwayToHomeRatio this.League.name                               
 
@@ -30,6 +31,6 @@ type Season = {
     League : League
 }
 
-let getLeagues = [  BL; PL; FR; SP ]
+let getLeagues = [ PL; FR; BL; SP ]
 
 
