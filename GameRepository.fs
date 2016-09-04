@@ -10,7 +10,7 @@ open System
 let mapRows (rows:seq<CsvRow>) = rows |> Seq.map ( fun c -> { Division = c?Div; Date = DateTime.Parse c?Date; 
         HomeTeam = { Name = c?HomeTeam; Score = c?FTHG.AsInteger(); Shots = c?HS.AsInteger(); ShotsOnTarget = c?HST.AsInteger(); Corners = c?HC.AsInteger(); Fouls = c?HF.AsInteger() }; 
         AwayTeam = { Name = c?AwayTeam; Score = c?FTAG.AsInteger(); Shots = c?AS.AsInteger(); ShotsOnTarget = c?AST.AsInteger(); Corners = c?AC.AsInteger(); Fouls = c?AF.AsInteger() };
-        Odds = { H = float c?B365H; U = float c?B365D;  B = float c?B365A } } )
+        Odds = { H = c?B365H.AsFloat(); U = c?B365D.AsFloat();  B = c?B365A.AsFloat() } } )
 
 
 
