@@ -24,7 +24,7 @@ type Parameters = {
             printf "--------------------------------------------------\n{ League: %s   OddsThreshold: %f  AwayToHomeRatio: %f  Previous games: %i } \n" 
                 this.League.name this.OddsThreshold this.AwayToHomeRatio this.PreviousGameCount
     override this.ToString() = 
-        sprintf "%f,%i,%f,%s\n" this.OddsThreshold this.PreviousGameCount this.AwayToHomeRatio this.League.name                               
+        sprintf "%f,%i,%f,%s" this.OddsThreshold this.PreviousGameCount this.AwayToHomeRatio this.League.name                               
 
 type Season = {
     Year : int

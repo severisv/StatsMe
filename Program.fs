@@ -22,11 +22,11 @@ let main argv =
         let sample = 720
         
         for j = 0 to 5 do
-            for i = 7 to 9 do
+            for i = 0 to 2 do
                 for k = 5 to 10 do
                     let parameters = { 
                         League = league; 
-                        OddsThreshold = (float i)/4.0;
+                        OddsThreshold = (float i)*0.1 + 1.7;
                         AwayToHomeRatio = float(j)/5.0;
                         PreviousGameCount = k*2;
                         Score = 0.0

@@ -31,8 +31,8 @@ let save (result : EndResult) =
       wr.Close()
 
 let add result = 
-    if result.TotalSpent > 1.0 then
-        let bestCurrentParamSet = get result.Parameters.League
-        if result.score > bestCurrentParamSet.Score then
-            save result
+//    if result.TotalSpent > 7500 then
+//        let bestCurrentParamSet = get result.Parameters.League
+//        if result.score > bestCurrentParamSet.Score then
+    save result
      
